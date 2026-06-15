@@ -1,0 +1,29 @@
+# Dev environment overrides
+deployment:
+  replicas: 1
+
+reservation:
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 128Mi
+
+member:
+  env:
+    JWT_SECRET: dev-secret-not-for-production
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 128Mi
+
+autoscaling:
+  enabled: false
+
+ingress:
+  enabled: false

@@ -1,0 +1,62 @@
+# Default values for NekoCafé Helm Chart
+
+image:
+  registry: ghcr.io
+  repository: panmeiru
+  tag: latest
+  pullPolicy: IfNotPresent
+
+deployment:
+  color: blue           # blue or green (for blue-green deployment)
+  replicas: 2
+  revisionHistoryLimit: 3
+
+reservation:
+  port: 8000
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 256Mi
+  env:
+    RESERVATION_DB_PATH: /data/reservation.db
+    OTEL_EXPORTER_OTLP_ENDPOINT: "http://otel-collector:4317"
+
+member:
+  port: 8001
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 256Mi
+  env:
+    MEMBER_DB_PATH: /data/member.db
+    JWT_SECRET: change-me-in-production
+    OTEL_EXPORTER_OTLP_ENDPOINT: "http://otel-collector:4317"
+
+service:
+  type: ClusterIP
+
+ingress:
+  enabled: false
+  className: nginx
+  host: api.neko.cafe
+
+autoscaling:
+  enabled: false
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 80
+
+serviceMonitor:
+  enabled: false
+  interval: 30s
+
+redis:
+  enabled: true
+  image: redis:7-alpine
+  port: 6379

@@ -1,0 +1,8 @@
+failure-threshold: warning
+ignored:
+  - DL3008  # pin versions in apt-get install (handled by pip lock)
+  - DL3013  # pin versions in pip install (handled by requirements.lock)
+  - DL3042  # pip install --no-cache-dir (already used)
+trustedRegistries:
+  - docker.io
+  - ghcr.io

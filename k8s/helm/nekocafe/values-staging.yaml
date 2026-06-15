@@ -1,0 +1,30 @@
+# Staging environment overrides
+deployment:
+  replicas: 2
+
+reservation:
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 256Mi
+
+member:
+  env:
+    JWT_SECRET: staging-secret-change-before-prod
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 256Mi
+
+ingress:
+  enabled: true
+  host: api-staging.neko.cafe
+
+serviceMonitor:
+  enabled: true

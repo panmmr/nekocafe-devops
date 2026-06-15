@@ -1,0 +1,124 @@
+{
+  "dashboard": {
+    "uid": "nekocafe-overview",
+    "title": "NekoCafé — Service Overview",
+    "tags": ["nekocafe", "fastapi"],
+    "timezone": "browser",
+    "schemaVersion": 39,
+    "refresh": "15s",
+    "panels": [
+      {
+        "id": 1,
+        "title": "QPS (Requests Per Second)",
+        "type": "timeseries",
+        "gridPos": {"x": 0, "y": 0, "w": 12, "h": 8},
+        "targets": [
+          {
+            "expr": "rate(http_requests_total[1m])",
+            "legendFormat": "{{service}}",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "reqps",
+            "custom": {"lineWidth": 2},
+            "color": {"mode": "palette-classic"}
+          }
+        },
+        "description": "每秒请求数 (QPS)，按服务分组"
+      },
+      {
+        "id": 2,
+        "title": "P99 Response Latency",
+        "type": "timeseries",
+        "gridPos": {"x": 12, "y": 0, "w": 12, "h": 8},
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.99, rate(http_request_duration_seconds_bucket[5m]))",
+            "legendFormat": "P99 — {{service}}",
+            "refId": "A"
+          },
+          {
+            "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m]))",
+            "legendFormat": "P95 — {{service}}",
+            "refId": "B"
+          },
+          {
+            "expr": "histogram_quantile(0.50, rate(http_request_duration_seconds_bucket[5m]))",
+            "legendFormat": "P50 — {{service}}",
+            "refId": "C"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "s",
+            "custom": {"lineWidth": 2}
+          }
+        },
+        "description": "P99 / P95 / P50 响应延迟"
+      },
+      {
+        "id": 3,
+        "title": "Error Rate (%)",
+        "type": "timeseries",
+        "gridPos": {"x": 0, "y": 8, "w": 12, "h": 8},
+        "targets": [
+          {
+            "expr": "rate(http_requests_total{status=~\"5..\"}[5m]) / rate(http_requests_total[5m]) * 100",
+            "legendFormat": "5xx — {{service}}",
+            "refId": "A"
+          },
+          {
+            "expr": "rate(http_requests_total{status=~\"4..\"}[5m]) / rate(http_requests_total[5m]) * 100",
+            "legendFormat": "4xx — {{service}}",
+            "refId": "B"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "min": 0,
+            "custom": {"lineWidth": 2},
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"color": "green", "value": null},
+                {"color": "yellow", "value": 1},
+                {"color": "red", "value": 5}
+              ]
+            }
+          }
+        },
+        "description": "错误率百分比，1% 黄线 / 5% 红线"
+      },
+      {
+        "id": 4,
+        "title": "Resource Usage (CPU / Memory)",
+        "type": "timeseries",
+        "gridPos": {"x": 12, "y": 8, "w": 12, "h": 8},
+        "targets": [
+          {
+            "expr": "container_cpu_usage_seconds_total{container=~\"nekocafe-.*\"} / container_spec_cpu_quota * 100",
+            "legendFormat": "CPU — {{container}}",
+            "refId": "A"
+          },
+          {
+            "expr": "container_memory_working_set_bytes{container=~\"nekocafe-.*\"} / container_spec_memory_limit_bytes * 100",
+            "legendFormat": "Mem — {{container}}",
+            "refId": "B"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "min": 0,
+            "max": 100,
+            "custom": {"lineWidth": 2}
+          }
+        },
+        "description": "容器 CPU 和内存使用率"
+      }
+    ]
+  }
+}

@@ -1,0 +1,51 @@
+{{- $color := .Values.deployment.color | default "blue" }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-reservation
+  labels:
+    app: nekocafe-reservation
+    release: {{ .Release.Name }}
+spec:
+  type: {{ .Values.service.type }}
+  selector:
+    app: nekocafe-reservation
+    color: {{ $color }}
+  ports:
+    - port: 80
+      targetPort: {{ .Values.reservation.port }}
+      name: http
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-member
+  labels:
+    app: nekocafe-member
+    release: {{ .Release.Name }}
+spec:
+  type: {{ .Values.service.type }}
+  selector:
+    app: nekocafe-member
+    color: {{ $color }}
+  ports:
+    - port: 80
+      targetPort: {{ .Values.member.port }}
+      name: http
+{{- if .Values.redis.enabled }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-redis
+  labels:
+    app: nekocafe-redis
+spec:
+  type: ClusterIP
+  selector:
+    app: nekocafe-redis
+  ports:
+    - port: {{ .Values.redis.port }}
+      targetPort: {{ .Values.redis.port }}
+{{- end }}

@@ -1,0 +1,137 @@
+{{- $color := .Values.deployment.color | default "blue" }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-{{ $color }}-reservation
+  labels:
+    app: nekocafe-reservation
+    color: {{ $color }}
+    release: {{ .Release.Name }}
+spec:
+  replicas: {{ .Values.deployment.replicas }}
+  revisionHistoryLimit: {{ .Values.deployment.revisionHistoryLimit }}
+  selector:
+    matchLabels:
+      app: nekocafe-reservation
+      color: {{ $color }}
+  template:
+    metadata:
+      labels:
+        app: nekocafe-reservation
+        color: {{ $color }}
+        release: {{ .Release.Name }}
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "{{ .Values.reservation.port }}"
+        prometheus.io/path: "/metrics"
+    spec:
+      containers:
+        - name: reservation
+          image: "{{ .Values.image.registry }}/{{ .Values.image.repository }}/nekocafe-reservation:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.reservation.port }}
+              name: http
+          env:
+            - name: RESERVATION_DB_PATH
+              value: {{ .Values.reservation.env.RESERVATION_DB_PATH }}
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: {{ .Values.reservation.env.OTEL_EXPORTER_OTLP_ENDPOINT }}
+          resources:
+            {{- toYaml .Values.reservation.resources | nindent 12 }}
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 5
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-{{ $color }}-member
+  labels:
+    app: nekocafe-member
+    color: {{ $color }}
+    release: {{ .Release.Name }}
+spec:
+  replicas: {{ .Values.deployment.replicas }}
+  revisionHistoryLimit: {{ .Values.deployment.revisionHistoryLimit }}
+  selector:
+    matchLabels:
+      app: nekocafe-member
+      color: {{ $color }}
+  template:
+    metadata:
+      labels:
+        app: nekocafe-member
+        color: {{ $color }}
+        release: {{ .Release.Name }}
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "{{ .Values.member.port }}"
+        prometheus.io/path: "/metrics"
+    spec:
+      containers:
+        - name: member
+          image: "{{ .Values.image.registry }}/{{ .Values.image.repository }}/nekocafe-member:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.member.port }}
+              name: http
+          env:
+            - name: MEMBER_DB_PATH
+              value: {{ .Values.member.env.MEMBER_DB_PATH }}
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: {{ .Values.member.env.OTEL_EXPORTER_OTLP_ENDPOINT }}
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-secrets
+                  key: jwt-secret
+          resources:
+            {{- toYaml .Values.member.resources | nindent 12 }}
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 5
+{{- if .Values.redis.enabled }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-redis
+  labels:
+    app: nekocafe-redis
+    release: {{ .Release.Name }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nekocafe-redis
+  template:
+    metadata:
+      labels:
+        app: nekocafe-redis
+    spec:
+      containers:
+        - name: redis
+          image: {{ .Values.redis.image }}
+          ports:
+            - containerPort: {{ .Values.redis.port }}
+{{- end }}

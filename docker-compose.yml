@@ -1,0 +1,74 @@
+version: "3.9"
+
+services:
+  reservation-service:
+    build:
+      context: services/reservation-service
+      dockerfile: Dockerfile
+    image: nekocafe-reservation:latest
+    container_name: nekocafe-reservation
+    ports:
+      - "8000:8000"
+    environment:
+      - RESERVATION_DB_PATH=/data/reservation.db
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
+    volumes:
+      - reservation_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/health')\""]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - nekocafe-net
+    restart: unless-stopped
+
+  member-service:
+    build:
+      context: services/member-service
+      dockerfile: Dockerfile
+    image: nekocafe-member:latest
+    container_name: nekocafe-member
+    ports:
+      - "8001:8001"
+    environment:
+      - MEMBER_DB_PATH=/data/member.db
+      - JWT_SECRET=nekocafe-dev-jwt-secret-change-in-prod
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
+    volumes:
+      - member_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8001/health')\""]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - nekocafe-net
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: nekocafe-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    networks:
+      - nekocafe-net
+    restart: unless-stopped
+
+networks:
+  nekocafe-net:
+    driver: bridge
+
+volumes:
+  reservation_data:
+  member_data:
+  redis_data:

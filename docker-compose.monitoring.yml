@@ -1,0 +1,71 @@
+version: "3.9"
+
+services:
+  # OpenTelemetry Collector
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.111.0
+    container_name: nekocafe-otel-collector
+    command: ["--config=/etc/otel-collector-config.yaml"]
+    volumes:
+      - ./k8s/monitoring/otel-collector-config.yaml:/etc/otel-collector-config.yaml:ro
+    ports:
+      - "4317:4317"
+      - "4318:4318"
+      - "8889:8889"
+    networks:
+      - nekocafe-net
+    restart: unless-stopped
+
+  # Prometheus
+  prometheus:
+    image: prom/prometheus:v2.54.0
+    container_name: nekocafe-prometheus
+    volumes:
+      - ./k8s/monitoring/prometheus-rules/alerts.yaml:/etc/prometheus/alerts.yaml:ro
+      - prometheus_data:/prometheus
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --web.console.libraries=/usr/share/prometheus/console_libraries
+      - --web.console.templates=/usr/share/prometheus/consoles
+      - --web.enable-lifecycle
+    ports:
+      - "9090:9090"
+    networks:
+      - nekocafe-net
+    restart: unless-stopped
+
+  # Grafana
+  grafana:
+    image: grafana/grafana:11.2.0
+    container_name: nekocafe-grafana
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_INSTALL_PLUGINS=grafana-clock-panel,grafana-piechart-panel
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./k8s/monitoring/grafana-dashboards:/etc/grafana/provisioning/dashboards:ro
+    ports:
+      - "3000:3000"
+    networks:
+      - nekocafe-net
+    restart: unless-stopped
+
+  # Loki (log aggregation)
+  loki:
+    image: grafana/loki:3.2.0
+    container_name: nekocafe-loki
+    ports:
+      - "3100:3100"
+    networks:
+      - nekocafe-net
+    restart: unless-stopped
+
+networks:
+  nekocafe-net:
+    external: true
+
+volumes:
+  prometheus_data:
+  grafana_data:

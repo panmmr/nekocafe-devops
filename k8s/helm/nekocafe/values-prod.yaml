@@ -1,0 +1,37 @@
+# Production environment overrides
+deployment:
+  replicas: 4
+
+reservation:
+  resources:
+    requests:
+      cpu: 200m
+      memory: 256Mi
+    limits:
+      cpu: 1000m
+      memory: 512Mi
+
+member:
+  env:
+    JWT_SECRET: ""  # injected via sealed-secrets / external-secrets
+  resources:
+    requests:
+      cpu: 200m
+      memory: 256Mi
+    limits:
+      cpu: 1000m
+      memory: 512Mi
+
+ingress:
+  enabled: true
+  host: api.neko.cafe
+
+autoscaling:
+  enabled: true
+  minReplicas: 4
+  maxReplicas: 20
+  targetCPUUtilizationPercentage: 70
+
+serviceMonitor:
+  enabled: true
+  interval: 15s

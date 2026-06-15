@@ -1,0 +1,60 @@
+groups:
+  - name: nekocafe-alerts
+    rules:
+      # Alert 1: High P95 latency
+      - alert: HighP95Latency
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 0.5
+        for: 2m
+        labels:
+          severity: warning
+          service: nekocafe
+        annotations:
+          summary: "P95 延迟超过 500ms"
+          description: "服务 {{ $labels.service }} 的 P95 延迟为 {{ $value }}s，超过阈值 0.5s。"
+          runbook_url: "https://wiki.neko.cafe/runbooks/high-latency"
+
+      # Alert 2: High error rate (>1%)
+      - alert: HighErrorRate
+        expr: rate(http_requests_total{status=~"5.."}[5m]) / rate(http_requests_total[5m]) > 0.01
+        for: 2m
+        labels:
+          severity: critical
+          service: nekocafe
+        annotations:
+          summary: "错误率超过 1%"
+          description: "服务 {{ $labels.service }} 的 5xx 错误率为 {{ $value | humanizePercentage }}，超过阈值 1%。"
+          runbook_url: "https://wiki.neko.cafe/runbooks/high-error-rate"
+
+      # Alert 3: Redis connection failure
+      - alert: RedisDown
+        expr: redis_up == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: nekocafe
+        annotations:
+          summary: "Redis 连接失败"
+          description: "Redis 实例 {{ $labels.instance }} 不可达。排队和缓冲池功能将受影响。"
+          runbook_url: "https://wiki.neko.cafe/runbooks/redis-down"
+
+      # Alert 4: High CPU usage
+      - alert: HighCPUUsage
+        expr: container_cpu_usage_seconds_total{container=~"nekocafe-.*"} / container_spec_cpu_quota > 0.8
+        for: 5m
+        labels:
+          severity: warning
+          service: nekocafe
+        annotations:
+          summary: "CPU 使用率超过 80%"
+          description: "容器 {{ $labels.container }} CPU 使用率已达 {{ $value | humanizePercentage }}。"
+
+      # Alert 5: Pod restarting frequently
+      - alert: FrequentRestarts
+        expr: rate(kube_pod_container_status_restarts_total{namespace=~"nekocafe.*"}[15m]) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+          service: nekocafe
+        annotations:
+          summary: "Pod 频繁重启"
+          description: "Pod {{ $labels.pod }} 在最近 15 分钟内重启了 {{ $value }} 次。"
