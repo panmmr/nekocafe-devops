@@ -1,6 +1,7 @@
 """
 SQLite database initialization for Member Service
 """
+
 import sqlite3
 import os
 

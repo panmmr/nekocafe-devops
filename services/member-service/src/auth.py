@@ -1,6 +1,7 @@
 """
 JWT authentication utilities
 """
+
 import os
 import secrets
 import time
@@ -32,12 +33,15 @@ def create_access_token(member_id: int, phone: str) -> str:
 def create_refresh_token(member_id: int) -> str:
     token = secrets.token_urlsafe(48)
     from .database import get_db
+
     conn = get_db()
     try:
-        expires = (datetime.utcnow() + timedelta(seconds=REFRESH_TOKEN_EXPIRE)).isoformat()
+        expires = (
+            datetime.utcnow() + timedelta(seconds=REFRESH_TOKEN_EXPIRE)
+        ).isoformat()
         conn.execute(
             "INSERT INTO refresh_tokens (member_id, token, expires_at) VALUES (?, ?, ?)",
-            (member_id, token, expires)
+            (member_id, token, expires),
         )
         conn.commit()
     finally:
@@ -57,7 +61,9 @@ def decode_access_token(token: str) -> dict:
         raise HTTPException(401, detail="无效的 token")
 
 
-def get_current_user(credentials: HTTPAuthorizationCredentials | None = Depends(security)) -> dict:
+def get_current_user(
+    credentials: HTTPAuthorizationCredentials | None = Depends(security),
+) -> dict:
     if not credentials:
         raise HTTPException(401, detail="缺少认证信息")
     payload = decode_access_token(credentials.credentials)
@@ -66,11 +72,12 @@ def get_current_user(credentials: HTTPAuthorizationCredentials | None = Depends(
 
 def verify_refresh_token(token: str) -> int | None:
     from .database import get_db
+
     conn = get_db()
     try:
         row = conn.execute(
             "SELECT member_id, expires_at, revoked FROM refresh_tokens WHERE token=?",
-            (token,)
+            (token,),
         ).fetchone()
         if not row or row["revoked"]:
             return None

@@ -1,6 +1,7 @@
 """
 SQLite database initialization for Reservation Service
 """
+
 import sqlite3
 import os
 
@@ -69,15 +70,23 @@ def init_db():
 
 def _seed_slots(conn: sqlite3.Connection):
     import itertools
+
     stores = [1, 2]
     dates = ["2026-06-15", "2026-06-16", "2026-06-17"]
-    times = ["10:00-12:00", "12:00-14:00", "14:00-16:00", "16:00-18:00", "18:00-20:00", "20:00-22:00"]
+    times = [
+        "10:00-12:00",
+        "12:00-14:00",
+        "14:00-16:00",
+        "16:00-18:00",
+        "18:00-20:00",
+        "20:00-22:00",
+    ]
     table_num = 1
     for store, d, t in itertools.product(stores, dates, times):
         for slot_type in ["standard", "standard", "cat-friendly", "window"]:
             conn.execute(
                 "INSERT INTO slots (store_id, slot_date, time_slot, slot_type, capacity, table_number) VALUES (?, ?, ?, ?, ?, ?)",
-                (store, d, t, slot_type, 4, f"T{table_num:03d}")
+                (store, d, t, slot_type, 4, f"T{table_num:03d}"),
             )
             table_num += 1
     conn.commit()

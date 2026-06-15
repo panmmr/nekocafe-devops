@@ -1,7 +1,8 @@
 """
 Pydantic models matching OpenAPI 3.0 schemas for Reservation Service
 """
-from datetime import date, datetime
+
+from datetime import datetime
 from enum import Enum
 from typing import Optional
 

@@ -1,8 +1,8 @@
 """Tests for Reservation Service"""
-import pytest
+
 from fastapi.testclient import TestClient
 from src.main import app
-from src.database import init_db, DB_PATH
+from src.database import init_db
 import os
 
 os.environ["RESERVATION_DB_PATH"] = ":memory:"
@@ -41,10 +41,16 @@ class TestAvailability:
 
 class TestReservationCRUD:
     def test_create_reservation(self):
-        resp = client.post("/api/v1/reservations", json={
-            "storeId": 1, "date": "2026-06-15", "timeSlot": "10:00-12:00",
-            "guestCount": 2, "bringCat": False
-        })
+        resp = client.post(
+            "/api/v1/reservations",
+            json={
+                "storeId": 1,
+                "date": "2026-06-15",
+                "timeSlot": "10:00-12:00",
+                "guestCount": 2,
+                "bringCat": False,
+            },
+        )
         assert resp.status_code == 201
         data = resp.json()
         assert data["reservationId"] > 0
@@ -53,14 +59,24 @@ class TestReservationCRUD:
     def test_create_full_slot(self):
         # Fill up 10:00-12:00 slot (capacity 16 across 4 tables)
         for _ in range(20):
-            client.post("/api/v1/reservations", json={
-                "storeId": 1, "date": "2026-06-15", "timeSlot": "10:00-12:00",
-                "guestCount": 2
-            })
-        resp = client.post("/api/v1/reservations", json={
-            "storeId": 1, "date": "2026-06-15", "timeSlot": "10:00-12:00",
-            "guestCount": 2
-        })
+            client.post(
+                "/api/v1/reservations",
+                json={
+                    "storeId": 1,
+                    "date": "2026-06-15",
+                    "timeSlot": "10:00-12:00",
+                    "guestCount": 2,
+                },
+            )
+        resp = client.post(
+            "/api/v1/reservations",
+            json={
+                "storeId": 1,
+                "date": "2026-06-15",
+                "timeSlot": "10:00-12:00",
+                "guestCount": 2,
+            },
+        )
         assert resp.status_code == 409
 
     def test_get_reservation_not_found(self):
@@ -68,10 +84,15 @@ class TestReservationCRUD:
         assert resp.status_code == 404
 
     def test_cancel_reservation(self):
-        resp = client.post("/api/v1/reservations", json={
-            "storeId": 1, "date": "2026-06-17", "timeSlot": "14:00-16:00",
-            "guestCount": 1
-        })
+        resp = client.post(
+            "/api/v1/reservations",
+            json={
+                "storeId": 1,
+                "date": "2026-06-17",
+                "timeSlot": "14:00-16:00",
+                "guestCount": 1,
+            },
+        )
         rid = resp.json()["reservationId"]
         resp = client.post(f"/api/v1/reservations/{rid}/cancel")
         assert resp.status_code == 200
@@ -102,9 +123,10 @@ class TestQueue:
 
 class TestCatMatching:
     def test_match(self):
-        resp = client.post("/api/v1/reservations/match", json={
-            "storeId": 1, "userId": 1, "userCatId": 1
-        })
+        resp = client.post(
+            "/api/v1/reservations/match",
+            json={"storeId": 1, "userId": 1, "userCatId": 1},
+        )
         assert resp.status_code == 200
         data = resp.json()
         assert len(data["recommendations"]) <= 3

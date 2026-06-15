@@ -1,4 +1,5 @@
 """Member profile routes"""
+
 from fastapi import APIRouter, Depends
 
 from ..auth import get_current_user
@@ -25,9 +26,17 @@ def _calc_level(spending: float) -> tuple[MemberLevel, MemberLevel, float]:
                 next_level = LEVEL_THRESHOLDS[i + 1][0]
             else:
                 next_level = lv
-    amount_next = max(0, LEVEL_THRESHOLDS[
-        [i for i, (_, t) in enumerate(LEVEL_THRESHOLDS) if LEVEL_THRESHOLDS[i][0] == next_level][0]
-    ][1] - spending)
+    amount_next = max(
+        0,
+        LEVEL_THRESHOLDS[
+            [
+                i
+                for i, (_, t) in enumerate(LEVEL_THRESHOLDS)
+                if LEVEL_THRESHOLDS[i][0] == next_level
+            ][0]
+        ][1]
+        - spending,
+    )
     return current, next_level, amount_next
 
 
@@ -35,7 +44,9 @@ def _calc_level(spending: float) -> tuple[MemberLevel, MemberLevel, float]:
 def get_my_profile(user: dict = Depends(get_current_user)):
     conn = get_db()
     try:
-        row = conn.execute("SELECT * FROM members WHERE id=?", (user["memberId"],)).fetchone()
+        row = conn.execute(
+            "SELECT * FROM members WHERE id=?", (user["memberId"],)
+        ).fetchone()
         if not row:
             return {}
         current_lv, _, _ = _calc_level(row["total_spending"])
@@ -57,7 +68,10 @@ def update_profile(body: MemberUpdate, user: dict = Depends(get_current_user)):
     conn = get_db()
     try:
         if body.nickname is not None:
-            conn.execute("UPDATE members SET nickname=? WHERE id=?", (body.nickname, user["memberId"]))
+            conn.execute(
+                "UPDATE members SET nickname=? WHERE id=?",
+                (body.nickname, user["memberId"]),
+            )
             conn.commit()
         return {"message": "更新成功"}
     finally:
@@ -68,11 +82,18 @@ def update_profile(body: MemberUpdate, user: dict = Depends(get_current_user)):
 def get_my_level(user: dict = Depends(get_current_user)):
     conn = get_db()
     try:
-        row = conn.execute("SELECT total_spending FROM members WHERE id=?", (user["memberId"],)).fetchone()
+        row = conn.execute(
+            "SELECT total_spending FROM members WHERE id=?", (user["memberId"],)
+        ).fetchone()
         if not row:
             return {}
         spending = row["total_spending"]
         current, nxt, amount = _calc_level(spending)
-        return LevelInfo(currentLevel=current, totalSpending=spending, nextLevel=nxt, amountToNextLevel=amount)
+        return LevelInfo(
+            currentLevel=current,
+            totalSpending=spending,
+            nextLevel=nxt,
+            amountToNextLevel=amount,
+        )
     finally:
         conn.close()

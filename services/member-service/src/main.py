@@ -1,6 +1,7 @@
 """
 NekoCafé Member Service — 会员管理、认证授权、积分优惠券
 """
+
 import json
 import logging
 import os
@@ -30,12 +31,14 @@ trace_id_var: ContextVar[str] = ContextVar("trace_id", default="")
 
 # Prometheus metrics
 REQUEST_COUNT = Counter(
-    "http_requests_total", "Total HTTP requests",
-    ["method", "endpoint", "status", "service"]
+    "http_requests_total",
+    "Total HTTP requests",
+    ["method", "endpoint", "status", "service"],
 )
 REQUEST_DURATION = Histogram(
-    "http_request_duration_seconds", "HTTP request duration",
-    ["method", "endpoint", "service"]
+    "http_request_duration_seconds",
+    "HTTP request duration",
+    ["method", "endpoint", "service"],
 )
 
 
@@ -103,8 +106,12 @@ async def trace_id_middleware(request: Request, call_next):
     endpoint = request.url.path
     method = request.method
     status = str(response.status_code)
-    REQUEST_COUNT.labels(method=method, endpoint=endpoint, status=status, service="member-service").inc()
-    REQUEST_DURATION.labels(method=method, endpoint=endpoint, service="member-service").observe(duration)
+    REQUEST_COUNT.labels(
+        method=method, endpoint=endpoint, status=status, service="member-service"
+    ).inc()
+    REQUEST_DURATION.labels(
+        method=method, endpoint=endpoint, service="member-service"
+    ).observe(duration)
 
     response.headers["X-Trace-Id"] = trace_id_var.get("")
     return response

@@ -1,6 +1,7 @@
 """
 Store table availability routes
 """
+
 from fastapi import APIRouter, Query
 
 from ..database import get_db
@@ -20,7 +21,7 @@ def get_availability(
     try:
         rows = conn.execute(
             "SELECT time_slot, slot_type, capacity, table_number FROM slots WHERE store_id=? AND slot_date=? ORDER BY time_slot",
-            (storeId, date)
+            (storeId, date),
         ).fetchall()
         if not rows:
             time_slots = []
@@ -32,22 +33,24 @@ def get_availability(
                     grouped[ts] = {"total": 0, "available": 0, "types": []}
                 reserved = conn.execute(
                     "SELECT COUNT(*) FROM reservations WHERE slot_id IN (SELECT id FROM slots WHERE store_id=? AND slot_date=? AND time_slot=?) AND status NOT IN ('CANCELLED','COMPLETED')",
-                    (storeId, date, ts)
+                    (storeId, date, ts),
                 ).fetchone()[0]
                 cap = r["capacity"]
                 grouped[ts]["total"] += cap
                 grouped[ts]["available"] += max(0, cap - reserved)
-                grouped[ts]["types"].append({
-                    "type": r["slot_type"],
-                    "capacity": cap,
-                    "available": max(0, cap - reserved)
-                })
+                grouped[ts]["types"].append(
+                    {
+                        "type": r["slot_type"],
+                        "capacity": cap,
+                        "available": max(0, cap - reserved),
+                    }
+                )
             time_slots = [
                 TimeSlotAvailability(
                     timeSlot=ts,
                     totalSlots=v["total"],
                     availableSlots=v["available"],
-                    slotTypes=[SlotType(**t) for t in v["types"]]
+                    slotTypes=[SlotType(**t) for t in v["types"]],
                 )
                 for ts, v in grouped.items()
             ]

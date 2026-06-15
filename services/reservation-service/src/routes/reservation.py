@@ -1,12 +1,13 @@
 """
 Reservation lifecycle management routes
 """
+
 from datetime import datetime, timedelta
 
 from fastapi import APIRouter, HTTPException
 
 from ..database import get_db
-from ..models import CreateReservationRequest, Reservation, ReservationStatus, RescheduleRequest
+from ..models import CreateReservationRequest, RescheduleRequest
 
 router = APIRouter(tags=["Reservation"])
 
@@ -17,24 +18,36 @@ def create_reservation(body: CreateReservationRequest):
     try:
         slot = conn.execute(
             "SELECT id, capacity FROM slots WHERE store_id=? AND slot_date=? AND time_slot=? AND slot_type!='cat-friendly' LIMIT 1",
-            (body.storeId, body.date, body.timeSlot)
+            (body.storeId, body.date, body.timeSlot),
         ).fetchone()
         if not slot:
             raise HTTPException(409, detail="时段已满，无可预约桌位")
 
         existing = conn.execute(
             "SELECT COUNT(*) FROM reservations WHERE slot_id=? AND status NOT IN ('CANCELLED','COMPLETED')",
-            (slot["id"],)
+            (slot["id"],),
         ).fetchone()
         if existing[0] >= slot["capacity"]:
             raise HTTPException(409, detail="时段已满")
 
         cur = conn.execute(
             "INSERT INTO reservations (user_id,store_id,slot_id,resv_date,time_slot,guest_count,bring_cat,status,created_at) VALUES (?,?,?,?,?,?,?,?,?)",
-            (1, body.storeId, slot["id"], body.date, body.timeSlot, body.guestCount, int(body.bringCat), "CONFIRMED", datetime.utcnow().isoformat())
+            (
+                1,
+                body.storeId,
+                slot["id"],
+                body.date,
+                body.timeSlot,
+                body.guestCount,
+                int(body.bringCat),
+                "CONFIRMED",
+                datetime.utcnow().isoformat(),
+            ),
         )
         conn.commit()
-        row = conn.execute("SELECT * FROM reservations WHERE id=?", (cur.lastrowid,)).fetchone()
+        row = conn.execute(
+            "SELECT * FROM reservations WHERE id=?", (cur.lastrowid,)
+        ).fetchone()
         return _row_to_reservation(row)
     finally:
         conn.close()
@@ -44,7 +57,9 @@ def create_reservation(body: CreateReservationRequest):
 def get_reservation(reservationId: int):
     conn = get_db()
     try:
-        row = conn.execute("SELECT * FROM reservations WHERE id=?", (reservationId,)).fetchone()
+        row = conn.execute(
+            "SELECT * FROM reservations WHERE id=?", (reservationId,)
+        ).fetchone()
         if not row:
             raise HTTPException(404, detail="预约不存在")
         return _row_to_reservation(row)
@@ -56,17 +71,21 @@ def get_reservation(reservationId: int):
 def reschedule(reservationId: int, body: RescheduleRequest):
     conn = get_db()
     try:
-        row = conn.execute("SELECT * FROM reservations WHERE id=?", (reservationId,)).fetchone()
+        row = conn.execute(
+            "SELECT * FROM reservations WHERE id=?", (reservationId,)
+        ).fetchone()
         if not row:
             raise HTTPException(404, detail="预约不存在")
         new_date = body.newDate or row["resv_date"]
         new_slot = body.newTimeSlot or row["time_slot"]
         conn.execute(
             "UPDATE reservations SET resv_date=?, time_slot=? WHERE id=?",
-            (new_date, new_slot, reservationId)
+            (new_date, new_slot, reservationId),
         )
         conn.commit()
-        row = conn.execute("SELECT * FROM reservations WHERE id=?", (reservationId,)).fetchone()
+        row = conn.execute(
+            "SELECT * FROM reservations WHERE id=?", (reservationId,)
+        ).fetchone()
         return _row_to_reservation(row)
     finally:
         conn.close()
@@ -76,7 +95,9 @@ def reschedule(reservationId: int, body: RescheduleRequest):
 def cancel_reservation(reservationId: int):
     conn = get_db()
     try:
-        row = conn.execute("SELECT * FROM reservations WHERE id=?", (reservationId,)).fetchone()
+        row = conn.execute(
+            "SELECT * FROM reservations WHERE id=?", (reservationId,)
+        ).fetchone()
         if not row:
             raise HTTPException(404, detail="预约不存在")
         created = datetime.fromisoformat(row["created_at"])
@@ -85,10 +106,13 @@ def cancel_reservation(reservationId: int):
         buffer_expires = (datetime.utcnow() + timedelta(minutes=5)).isoformat()
         conn.execute(
             "UPDATE reservations SET status='CANCELLED', buffer_expires_at=? WHERE id=?",
-            (buffer_expires, reservationId)
+            (buffer_expires, reservationId),
         )
         conn.commit()
-        return {"message": "取消成功，桌位进入缓冲池（5分钟）", "bufferExpiresAt": buffer_expires}
+        return {
+            "message": "取消成功，桌位进入缓冲池（5分钟）",
+            "bufferExpiresAt": buffer_expires,
+        }
     finally:
         conn.close()
 
@@ -97,10 +121,14 @@ def cancel_reservation(reservationId: int):
 def arrive(reservationId: int):
     conn = get_db()
     try:
-        row = conn.execute("SELECT * FROM reservations WHERE id=?", (reservationId,)).fetchone()
+        row = conn.execute(
+            "SELECT * FROM reservations WHERE id=?", (reservationId,)
+        ).fetchone()
         if not row:
             raise HTTPException(404, detail="预约不存在")
-        conn.execute("UPDATE reservations SET status='ARRIVED' WHERE id=?", (reservationId,))
+        conn.execute(
+            "UPDATE reservations SET status='ARRIVED' WHERE id=?", (reservationId,)
+        )
         conn.commit()
         return {"message": "到店确认成功"}
     finally:
