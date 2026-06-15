@@ -1,7 +1,13 @@
 extends: default
 
+ignore: |
+  k8s/helm/nekocafe/templates/
+  k8s/monitoring/
+
 rules:
   line-length: disable
   document-start: disable
   truthy: disable
   comments-indentation: disable
+  braces: disable
+  brackets: disable
