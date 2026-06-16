@@ -13,7 +13,7 @@ router = APIRouter(tags=["Availability"])
 @router.get("/stores/{storeId}/availability")
 def get_availability(
     storeId: int,
-    date: str = Query(...),
+    date: str = Query(..., pattern=r"^\d{4}-\d{2}-\d{2}$"),
     guestCount: int = Query(1, ge=1),
     bringCat: bool = Query(False),
 ):

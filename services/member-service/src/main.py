@@ -89,7 +89,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-FastAPIInstrumentor.instrument_app(app)
+try:
+    FastAPIInstrumentor.instrument_app(app)
+except Exception:
+    pass
 
 
 @app.middleware("http")

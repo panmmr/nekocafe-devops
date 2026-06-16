@@ -100,8 +100,9 @@ def cancel_reservation(reservationId: int):
         ).fetchone()
         if not row:
             raise HTTPException(404, detail="预约不存在")
-        created = datetime.fromisoformat(row["created_at"])
-        if datetime.utcnow() - created < timedelta(hours=2):
+        resv_start_str = row["resv_date"] + " " + row["time_slot"].split("-")[0]
+        resv_dt = datetime.strptime(resv_start_str, "%Y-%m-%d %H:%M")
+        if resv_dt - datetime.utcnow() < timedelta(hours=2):
             raise HTTPException(400, detail="距预约时间不足2小时，不可免费取消")
         buffer_expires = (datetime.utcnow() + timedelta(minutes=5)).isoformat()
         conn.execute(

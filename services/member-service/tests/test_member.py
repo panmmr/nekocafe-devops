@@ -1,13 +1,13 @@
 """Tests for Member Service"""
 
-import os
 from fastapi.testclient import TestClient
-
-os.environ["MEMBER_DB_PATH"] = ":memory:"
 from src.main import app
 from src.database import init_db
+import os
 
+os.environ["MEMBER_DB_PATH"] = ":memory:"
 init_db()
+
 client = TestClient(app)
 
 
@@ -66,6 +66,10 @@ class TestMemberProfile:
         resp = client.post(
             "/api/v1/auth/register", json={"phone": "13800138010", "smsCode": "123456"}
         )
+        if resp.status_code == 409:
+            resp = client.post(
+                "/api/v1/auth/login", json={"phone": "13800138010", "smsCode": "123456"}
+            )
         token = resp.json()["accessToken"]
         return {"Authorization": f"Bearer {token}"}
 
@@ -94,6 +98,10 @@ class TestPoints:
         resp = client.post(
             "/api/v1/auth/register", json={"phone": "13800138020", "smsCode": "123456"}
         )
+        if resp.status_code == 409:
+            resp = client.post(
+                "/api/v1/auth/login", json={"phone": "13800138020", "smsCode": "123456"}
+            )
         return {"Authorization": f"Bearer {resp.json()['accessToken']}"}
 
     def test_get_points(self):
@@ -114,6 +122,10 @@ class TestCoupons:
         resp = client.post(
             "/api/v1/auth/register", json={"phone": "13800138030", "smsCode": "123456"}
         )
+        if resp.status_code == 409:
+            resp = client.post(
+                "/api/v1/auth/login", json={"phone": "13800138030", "smsCode": "123456"}
+            )
         return {"Authorization": f"Bearer {resp.json()['accessToken']}"}
 
     def test_get_coupons(self):
@@ -128,6 +140,10 @@ class TestUserCat:
         resp = client.post(
             "/api/v1/auth/register", json={"phone": "13800138040", "smsCode": "123456"}
         )
+        if resp.status_code == 409:
+            resp = client.post(
+                "/api/v1/auth/login", json={"phone": "13800138040", "smsCode": "123456"}
+            )
         return {"Authorization": f"Bearer {resp.json()['accessToken']}"}
 
     def test_create_and_list_cats(self):
@@ -165,6 +181,10 @@ class TestPrivacy:
         resp = client.post(
             "/api/v1/auth/register", json={"phone": "13800138050", "smsCode": "123456"}
         )
+        if resp.status_code == 409:
+            resp = client.post(
+                "/api/v1/auth/login", json={"phone": "13800138050", "smsCode": "123456"}
+            )
         return {"Authorization": f"Bearer {resp.json()['accessToken']}"}
 
     def test_export_data(self):

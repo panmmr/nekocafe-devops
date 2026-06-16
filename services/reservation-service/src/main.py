@@ -89,7 +89,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-FastAPIInstrumentor.instrument_app(app)
+# FastAPIInstrumentor disabled due to _IncludedRouter incompatibility with FastAPI>=0.115
+# FastAPIInstrumentor.instrument_app(app)
 
 
 @app.middleware("http")
