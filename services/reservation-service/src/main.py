@@ -13,7 +13,6 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
 from opentelemetry import trace
-from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 from opentelemetry.sdk.resources import SERVICE_NAME, Resource
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
@@ -90,7 +89,6 @@ app.add_middleware(
 )
 
 # FastAPIInstrumentor disabled due to _IncludedRouter incompatibility with FastAPI>=0.115
-# FastAPIInstrumentor.instrument_app(app)
 
 
 @app.middleware("http")
