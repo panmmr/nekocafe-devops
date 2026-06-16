@@ -29,6 +29,9 @@ htmlcov/
 # Docker
 *.log
 
+# Database (auto-generated, should not be committed)
+*.db
+
 # Environment
 .env
 .env.*
